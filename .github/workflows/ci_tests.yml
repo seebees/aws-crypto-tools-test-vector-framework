@@ -7,5 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: pytest
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      - name: run test
         run: PYTHONPATH=./features/ pytest -s test/*
