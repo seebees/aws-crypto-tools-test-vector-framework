@@ -16,6 +16,7 @@
 import argparse
 import uuid
 import json
+import re
 import os
 import sys
 from urllib.parse import urlunparse
@@ -148,6 +149,40 @@ def _build_tests(keys):
             ]
         },
     )
+
+
+def parse_arn(arn):
+    return re.split("[:/]", arn)
+
+
+def build_arn(arn_pieces):
+    ":".join(arn_pieces[0:6]) + "/" + arn_pieces[6]
+
+
+def kms_mkr_arn_mismatches(arn):
+    arn_pieces = re.split("[:/]", arn)
+    for index, arn_piece in enumerate(arn_pieces):
+        # With the value removed
+        yield build_arn(arn_pieces[0:index] + arn_pieces[index + 1:])
+
+        # With the value replaced by an empty string
+        yield build_arn(arn_pieces[0:index] + [""] + arn_pieces[index + 1:])
+
+        # With the value modified to an incorrect value,
+        # EXCEPT for the region (which is the one piece that can change between
+        # related multi-region keys)
+        # NOTE: the `not` is appended and not prepended
+        # in order to alow for an `mrk-` match.
+        if index != 3:
+            yield build_arn(arn_pieces[0:index] + [arn_piece + "-not"] + arn_pieces[index + 1:])
+    
+    # An alias could be confused with an MRK arn
+    # so this takes a good MRK arn
+    # and replaces `key` with `alias`
+    yield build_arn(arn_pieces[0:5] + ["alias"] + arn_pieces[6:])
+
+    # A raw key id is valid for encrypt, but MUST not work for decrypt.
+    yield arn_pieces[-1]
 
 
 def build_manifest(keys_filename):
