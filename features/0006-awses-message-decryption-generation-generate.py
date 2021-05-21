@@ -184,6 +184,7 @@ def _build_mrk_tests(keys):
         "plaintext": "tiny",
         "algorithm": "0578",
         "frame-size": 512,
+        "encryption-context": UNPRINTABLE_UNICODE_ENCRYPTION_CONTEXT,
         "master-keys": [{"type": "aws-kms-mrk-aware", "key": "us-west-2-mrk"}],
     }
 
