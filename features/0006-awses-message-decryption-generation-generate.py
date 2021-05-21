@@ -153,25 +153,26 @@ def _build_tests(keys):
         },
     )
 
-    def _master_key_for_name(name):
+    def _mrk_aware_master_key_for_name(name):
         return {"type": "aws-kms-mrk-aware", "key": name}
 
-    good_arns = [AWS_KMS_MRK_WEST_ARN, AWS_KMS_MRK_WEST_ARN] 
-    good_master_keys = map(_master_key_for_name, good_arns)
-    bad_arns = AWS_KMS_MRK_WEST_ARN_MISMATCHES
-    bad_master_keys = map(_master_key_for_name, bad_arns)
-    all_master_keys = good_master_keys + bad_master_keys
+    good_arns = {
+        "us-west-2-mrk": AWS_KMS_MRK_WEST_ARN,
+        "us-east-1-mrk": AWS_KMS_MRK_EAST_ARN
+    }
+    bad_arns = dict(map(lambda x: (x, x), AWS_KMS_MRK_WEST_ARN_MISMATCHES))
+    all_arns = {**good_arns, **bad_arns}
 
     mrk_encryption_scenario = {
         "plaintext": "small",
         "algorithm": algorithm,
         "frame-size": frame_size,
         "encryption-context": ec,
-        "master-keys": [_master_key_for_name(AWS_KMS_MRK_WEST_ARN)],
+        "master-keys": [{"type": "aws-kms-mrk-aware", "key": "us-west-2-mrk"}],
     }
 
-    # Bad message MUST fail no matter what the configuration
-    for master_key in all_master_keys:
+    # Bad messages MUST fail no matter what the configuration
+    for key_name in all_arns.keys():
         yield (
             str(uuid.uuid4()),
             {
@@ -179,30 +180,30 @@ def _build_tests(keys):
                 "tampering": {
                     "change-edk-provider-info": bad_arns,
                 },
-                "decryption-master-keys": [master_key]
+                "decryption-master-keys": [_mrk_aware_master_key_for_name(key_name)]
             },
         )
 
     # Good messages with bad configuration MUST fail
-    for bad_master_key in bad_master_keys:
+    for bad_key_name, bad_arn in bad_arns.items():
         yield (
             str(uuid.uuid4()),
             {
                 "encryption-scenario": mrk_encryption_scenario,
-                "decryption-master-keys": [bad_master_key],
+                "decryption-master-keys": [_mrk_aware_master_key_for_name(bad_key_name)],
                 "result": {
-                    "error_message": "Mismatched master key ARN: " + bad_master_key
+                    "error_message": "Mismatched master key ARN: " + bad_arn
                 }
             },
         )
 
     # Good data with good configuration MUST be the ONLY cases that succeed
-    for good_arn in good_arns:
+    for good_key_name, _ in good_arns.items():
         yield (
             str(uuid.uuid4()),
             {
                 "encryption-scenario": mrk_encryption_scenario,
-                "decryption-master-keys": [good_arn]
+                "decryption-master-keys": [_mrk_aware_master_key_for_name(good_key_name)]
             },
         )
 

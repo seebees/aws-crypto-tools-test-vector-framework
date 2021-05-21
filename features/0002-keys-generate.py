@@ -182,9 +182,8 @@ def build_manifest():
     # keys manifest since they aren't real keys, only values to be used in invalid master keys.
     # There should be a way to configure a master key with values that don't correspond to a real key.
     # For now we at least flag that they can't encrypt or decrypt.
-    for index, mismatched_mrk_arn in enumerate(AWS_KMS_MRK_WEST_ARN_MISMATCHES, start=1):
-        key_name = "us-west-2-mrk-mismatch-" + index
-        keys[key_name] = {
+    for mismatched_mrk_arn in AWS_KMS_MRK_WEST_ARN_MISMATCHES:
+        keys[mismatched_mrk_arn] = {
             "type": "aws-kms",
             "key-id": mismatched_mrk_arn,
             "encrypt": False,

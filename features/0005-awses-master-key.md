@@ -73,6 +73,8 @@ A master key structure is defined as a JSON object with the following members:
 * `key` : Name of key from a `keys` manifest
     * The master key ID should always be `key.key-id`
     * Must not be present if `type` is `aws-kms-mrk-aware-discovery`
+* `default-mrk-region` : Default AWS region for multi-region key discovery.
+    * Must be present if and only if `type` is `aws-kms-mrk-aware-discovery`
 * `provider-id` : Master Key Provider ID (required for Raw Master Keys)
 * `encryption-algorithm` : Encryption Algorithm (required for Raw Master Keys)
     * Allowed Values
