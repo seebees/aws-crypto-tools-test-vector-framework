@@ -15,6 +15,7 @@
 
 import itertools
 import functools
+import re
 import uuid
 
 # AWS Encryption SDK supported algorithm suites
@@ -156,6 +157,46 @@ def _aws_kms_providers(keys):
         # Multiple KMS MasterKeys, of which only one can be decrypted by all consumers
         for blackhole in encrypt_only:
             yield (key, blackhole)
+
+
+def parse_arn(arn):
+    return re.split("[:/]", arn)
+
+
+def build_arn(arn_pieces):
+    arn = ":".join(arn_pieces[0:6])
+    if len(arn_pieces) > 6:
+        arn += "/" + "/".join(arn_pieces[6:])
+    return arn
+
+
+def kms_mkr_arn_mismatches(arn):
+    # Example:
+    # arn:aws:kms:us-east-1:658956600833:key/mrk-80bd8ecdcd4342aebd84b7dc9da498a7
+
+    arn_pieces = re.split("[:/]", arn)
+    for index, arn_piece in enumerate(arn_pieces):
+        # With the value removed
+        yield build_arn(arn_pieces[0:index] + arn_pieces[index + 1:])
+
+        # With the value replaced by an empty string
+        yield build_arn(arn_pieces[0:index] + [""] + arn_pieces[index + 1:])
+
+        # With the value modified to an incorrect value,
+        # EXCEPT for the region (which is the one piece that can change between
+        # related multi-region keys)
+        # NOTE: the `not` is appended and not prepended
+        # in order to alow for an `mrk-` match.
+        if index != 3:
+            yield build_arn(arn_pieces[0:index] + [arn_piece + "-not"] + arn_pieces[index + 1:])
+    
+    # An alias could be confused with an MRK arn
+    # so this takes a good MRK arn
+    # and replaces `key` with `alias`
+    yield build_arn(arn_pieces[0:5] + ["alias"] + arn_pieces[6:])
+
+    # A raw key id is valid for encrypt, but MUST not work for decrypt.
+    yield arn_pieces[-1]
 
 
 def _raw_aes_providers(keys):
