@@ -202,7 +202,7 @@ def kms_mkr_arn_mismatches(arn):
 AWS_KMS_MRK_WEST_ARN = "arn:aws:kms:us-west-2:658956600833:key/mrk-80bd8ecdcd4342aebd84b7dc9da498a7"
 AWS_KMS_MRK_EAST_ARN = "arn:aws:kms:us-east-1:658956600833:key/mrk-80bd8ecdcd4342aebd84b7dc9da498a7"
 
-AWS_KMS_MRK_WEST_ARN_MISMATCHES = kms_mkr_arn_mismatches(AWS_KMS_MRK_WEST_ARN)
+AWS_KMS_MRK_WEST_ARN_MISMATCHES = list(kms_mkr_arn_mismatches(AWS_KMS_MRK_WEST_ARN))
 
 
 def _raw_aes_providers(keys):

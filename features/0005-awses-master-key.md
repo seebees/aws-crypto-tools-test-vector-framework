@@ -75,7 +75,11 @@ A master key structure is defined as a JSON object with the following members:
     * Must not be present if `type` is `aws-kms-mrk-aware-discovery`
 * `default-mrk-region` : Default AWS region for multi-region key discovery.
     * Must be present if and only if `type` is `aws-kms-mrk-aware-discovery`
-* `provider-id` : Master Key Provider ID (required for Raw Master Keys)
+* `aws-kms-discovery-filter` : AWs KMS key filtering for discovery mode.
+    * May only be provided if `type` is `aws-kms-mrk-aware-discovery`.
+    * If present, must include both of the following elements:
+        * `partition` : AWS partition containing the accounts to filter to.
+        * `account-ids` : List of AWS account IDs to restrict discovery to.
 * `encryption-algorithm` : Encryption Algorithm (required for Raw Master Keys)
     * Allowed Values
         * `aes`
