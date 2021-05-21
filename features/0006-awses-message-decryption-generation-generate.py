@@ -28,7 +28,10 @@ from awses_message_encryption_utils import (
     ENCRYPTION_CONTEXTS,
     UNPRINTABLE_UNICODE_ENCRYPTION_CONTEXT,
     _providers,
-    _raw_aes_providers
+    _raw_aes_providers,
+    AWS_KMS_MRK_WEST_ARN,
+    AWS_KMS_MRK_EAST_ARN,
+    AWS_KMS_MRK_WEST_ARN_MISMATCHES
 )
 
 MANIFEST_VERSION = 2
@@ -149,6 +152,59 @@ def _build_tests(keys):
             ]
         },
     )
+
+    def _master_key_for_name(name):
+        return {"type": "aws-kms-mrk-aware", "key": name}
+
+    good_arns = [AWS_KMS_MRK_WEST_ARN, AWS_KMS_MRK_WEST_ARN] 
+    good_master_keys = map(_master_key_for_name, good_arns)
+    bad_arns = AWS_KMS_MRK_WEST_ARN_MISMATCHES
+    bad_master_keys = map(_master_key_for_name, bad_arns)
+    all_master_keys = good_master_keys + bad_master_keys
+
+    mrk_encryption_scenario = {
+        "plaintext": "small",
+        "algorithm": algorithm,
+        "frame-size": frame_size,
+        "encryption-context": ec,
+        "master-keys": [_master_key_for_name(AWS_KMS_MRK_WEST_ARN)],
+    }
+
+    # Bad message MUST fail no matter what the configuration
+    for master_key in all_master_keys:
+        yield (
+            str(uuid.uuid4()),
+            {
+                "encryption-scenario": mrk_encryption_scenario,
+                "tampering": {
+                    "change-edk-provider-info": bad_arns,
+                },
+                "decryption-master-keys": [master_key]
+            },
+        )
+
+    # Good messages with bad configuration MUST fail
+    for bad_master_key in bad_master_keys:
+        yield (
+            str(uuid.uuid4()),
+            {
+                "encryption-scenario": mrk_encryption_scenario,
+                "decryption-master-keys": [bad_master_key],
+                "result": {
+                    "error_message": "Mismatched master key ARN: " + bad_master_key
+                }
+            },
+        )
+
+    # Good data with good configuration MUST be the ONLY cases that succeed
+    for good_arn in good_arns:
+        yield (
+            str(uuid.uuid4()),
+            {
+                "encryption-scenario": mrk_encryption_scenario,
+                "decryption-master-keys": [good_arn]
+            },
+        )
 
 
 def build_manifest(keys_filename):

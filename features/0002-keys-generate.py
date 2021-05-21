@@ -17,6 +17,9 @@ import base64
 import json
 import sys
 
+from awses_message_encryption_utils import kms_mkr_arn_mismatches, AWS_KMS_MRK_WEST_ARN, AWS_KMS_MRK_EAST_ARN, AWS_KMS_MRK_WEST_ARN_MISMATCHES
+
+
 VERSION = 3
 AES_KEYS = (
     (128, b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15"),
@@ -123,6 +126,16 @@ AWS_KMS_KEYS = (
         "arn:aws:kms:us-west-2:658956600833:alias/EncryptOnly",
         False,
     ),
+    (
+        "us-west-2-mrk",
+        AWS_KMS_MRK_WEST_ARN,
+        True,
+    ),
+    (
+        "us-east-1-mrk",
+        AWS_KMS_MRK_EAST_ARN,
+        True,
+    ),
 )
 
 
@@ -163,6 +176,19 @@ def build_manifest():
             "key-id": key_arn,
             "encrypt": True,
             "decrypt": decryptable,
+        }
+
+    # We also need some fuzzed mismatching MRK ARNs. Ideally these wouldn't be in the
+    # keys manifest since they aren't real keys, only values to be used in invalid master keys.
+    # There should be a way to configure a master key with values that don't correspond to a real key.
+    # For now we at least flag that they can't encrypt or decrypt.
+    for index, mismatched_mrk_arn in enumerate(AWS_KMS_MRK_WEST_ARN_MISMATCHES, start=1):
+        key_name = "us-west-2-mrk-mismatch-" + index
+        keys[key_name] = {
+            "type": "aws-kms",
+            "key-id": mismatched_mrk_arn,
+            "encrypt": False,
+            "decrypt": False,
         }
 
     manifest["keys"] = keys
