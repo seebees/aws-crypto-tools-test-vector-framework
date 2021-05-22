@@ -210,7 +210,7 @@ def _build_mrk_tests(keys):
                 "decryption-master-keys": [bad_master_key],
                 "result": {
                     "error": {
-                        "error-message": "Mismatched master key: " + str(bad_master_key)
+                        "error-description": "Mismatched master key: " + str(bad_master_key)
                     }
                 }
             },
