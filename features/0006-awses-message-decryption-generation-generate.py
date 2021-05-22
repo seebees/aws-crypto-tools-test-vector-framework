@@ -209,7 +209,9 @@ def _build_mrk_tests(keys):
                 "encryption-scenario": mrk_encryption_scenario,
                 "decryption-master-keys": [bad_master_key],
                 "result": {
-                    "error-message": "Mismatched master key: " + str(bad_master_key)
+                    "error": {
+                        "error-message": "Mismatched master key: " + str(bad_master_key)
+                    }
                 }
             },
         )
