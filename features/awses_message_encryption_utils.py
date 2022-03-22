@@ -216,7 +216,7 @@ def _raw_aes_providers(keys):
             {
                 "type": "raw",
                 "key": name,
-                "provider-id": "aws-raw-vectors-persistant",
+                "provider-id": "aws-raw-vectors-persistent-aes",
                 "encryption-algorithm": "aes",
             },
         )
@@ -232,7 +232,7 @@ def _raw_rsa_providers(keys):
         return {
             "type": "raw",
             "key": name,
-            "provider-id": "aws-raw-vectors-persistant",
+            "provider-id": "aws-raw-vectors-persistent-rsa",
             "encryption-algorithm": "rsa",
         }
 
@@ -253,6 +253,36 @@ def _raw_rsa_providers(keys):
                 _blackhole_key.update(RAW_RSA_BLACKHOLE_ARGUMENTS_OVERRIDE)
                 yield (_key, _blackhole_key)
 
+
+
+def _raw_asymmetric_pair_providers(keys):
+    """Build all RSA Raw Master Key configurations to test.
+
+    :param dict keys: Parsed keys manifest
+    """
+
+    def _key_builder(name, key):
+        return {
+            "type": "raw",
+            "key": name,
+            "provider-id": "aws-raw-vectors-persistent-rsa",
+            "encryption-algorithm": key["algorithm"],
+        }
+
+    # The only asynchronous keys are RSA
+    for publicName, public in _keys_for_type("public", keys):
+        for privateName, private in  _keys_for_type("private", keys):
+            if private["key-id"] == public["key-id"]:
+                yield(_key_builder(publicName, public), _key_builder(privateName, private))
+
+def _raw_symmetric_pair_providers(keys):
+    """Build all master key provider configurations to test.
+
+    :param dict keys: Parsed keys manifest
+    """
+    return itertools.chain(
+        _aws_kms_providers(keys), _raw_aes_providers(keys)
+    )
 
 def _providers(keys):
     """Build all master key provider configurations to test.

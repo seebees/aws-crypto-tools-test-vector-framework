@@ -158,10 +158,11 @@ def build_manifest():
         }
 
     for key_bits, key_type, pem_key in RSA_KEYS:
+        key_id =  "rsa-%s" % key_bits
         key_name = "rsa-%s-%s" % (key_bits, key_type)
         keys[key_name] = {
-            "key-id": key_name,
-            "encrypt": True,
+            "key-id": key_id,
+            "encrypt": key_type == "public",
             "decrypt": key_type == "private",
             "algorithm": "rsa",
             "type": key_type,

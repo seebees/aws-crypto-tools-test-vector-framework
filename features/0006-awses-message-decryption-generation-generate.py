@@ -22,15 +22,13 @@ import sys
 from urllib.parse import urlunparse
 from awses_message_encryption_utils import (
     PLAINTEXTS,
-    RAW_RSA_PADDING_ALGORITHMS,
     ALGORITHM_SUITES,
     FRAME_SIZES,
     ENCRYPTION_CONTEXTS,
     UNPRINTABLE_UNICODE_ENCRYPTION_CONTEXT,
-    _providers,
+    _raw_symmetric_pair_providers,
     _raw_aes_providers,
-    AWS_KMS_MRK_WEST_ARN,
-    AWS_KMS_MRK_EAST_ARN,
+    _raw_asymmetric_pair_providers,
     AWS_KMS_MRK_WEST_ARN_MISMATCHES
 )
 
@@ -50,36 +48,34 @@ def _build_tests(keys):
     for algorithm in ALGORITHM_SUITES:
         for frame_size in FRAME_SIZES:
             for ec in ENCRYPTION_CONTEXTS:
-                for provider_set in _providers(keys):
-                    yield (
-                        str(uuid.uuid4()),
-                        {
-                            "encryption-scenario": {
-                                "plaintext": "small",
-                                "algorithm": algorithm,
-                                "frame-size": frame_size,
-                                "encryption-context": ec,
-                                "master-keys": provider_set,
-                            }
-                        },
-                    )
-
-    for algorithm in ALGORITHM_SUITES:
-        for frame_size in FRAME_SIZES:
-            for ec in ENCRYPTION_CONTEXTS:
-                for provider_set in _providers(keys):
-                    yield (
-                        str(uuid.uuid4()),
-                        {
-                            "encryption-scenario": {
-                                "plaintext": "zero",
-                                "algorithm": algorithm,
-                                "frame-size": frame_size,
-                                "encryption-context": ec,
-                                "master-keys": provider_set,
-                            }
-                        },
-                    )
+                for size in ["zero", "small"]:
+                    for provider_set in _raw_symmetric_pair_providers(keys):
+                        yield (
+                            str(uuid.uuid4()),
+                            {
+                                "encryption-scenario": {
+                                    "plaintext": size,
+                                    "algorithm": algorithm,
+                                    "frame-size": frame_size,
+                                    "encryption-context": ec,
+                                    "master-keys": provider_set,
+                                }
+                            },
+                        )
+                    for public, private in _raw_asymmetric_pair_providers(keys):
+                        yield (
+                            str(uuid.uuid4()),
+                            {
+                                "encryption-scenario": {
+                                    "plaintext": size,
+                                    "algorithm": algorithm,
+                                    "frame-size": frame_size,
+                                    "encryption-context": ec,
+                                    "master-keys": public,
+                                },
+                                "decryption-master-keys": [ private ]
+                            },
+                        )
 
     yield (
         str(uuid.uuid4()),
